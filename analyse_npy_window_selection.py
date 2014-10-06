@@ -59,6 +59,27 @@ plt.ion()
 
 from constants import (et_nan_values, stim_dtype, stim_pos_mappings)
 
+# get git rev info for current working dir git repo
+def get_git_local_changed():
+    import subprocess
+    local_repo_status = subprocess.check_output(['git', 'status'])
+    return local_repo_status.find(
+        'nothing to commit, working directory clean') == -1 and \
+           local_repo_status.find('branch is up-to-date') == -1
+
+def get_git_revision_hash(branch_name='HEAD'):
+    import subprocess
+    return subprocess.check_output(['git', 'rev-parse', branch_name])
+
+def get_git_revision_short_hash(branch_name='HEAD'):
+    import subprocess
+    return subprocess.check_output(['git', 'rev-parse', '--short', branch_name])
+    
+def getFullOutputFolderPath(out_folder):
+    output_folder_postfix = "rev_{0}".format(get_git_revision_short_hash().strip())
+    if get_git_local_changed():
+        output_folder_postfix = output_folder_postfix+"_UNSYNCED"
+    return nabs(os.path.join(out_folder, output_folder_postfix))
 
 def rolling_window(a, window):
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
@@ -355,7 +376,9 @@ if __name__ == '__main__':
             
 
             #Save output
-            WIN_SELECT_OUTPUT = '{root}/{et_model}/{et_model}_win_select/'.format(root=INPUT_FILE_ROOT, et_model=et_model)
+            WIN_SELECT_OUTPUT = '{root}/{et_model}/{et_model}_win_select_{git}'.format(root=INPUT_FILE_ROOT, 
+                                                                                       et_model=et_model,
+                                                                                       git=getFullOutputFolderPath('/')[1:])
             if not os.path.exists(WIN_SELECT_OUTPUT):
                 os.mkdir(WIN_SELECT_OUTPUT)
             
@@ -380,9 +403,9 @@ if __name__ == '__main__':
    
     stim_all = np.array(stim_all, dtype=stim.dtype) 
     if SAVE_STIM_NPY: 
-       np.save('{output_dir}/edq_measures'.format(output_dir=STIM_OUTPUT_DIR), stim_all)
+       np.save('{output_dir}/edq_measures_{git}'.format(output_dir=STIM_OUTPUT_DIR, git=getFullOutputFolderPath('/')[1:]), stim_all)
     if SAVE_STIM_TXT:
-       save_as_txt('{output_dir}/edq_measures.txt'.format(output_dir=STIM_OUTPUT_DIR), stim_all)
+       save_as_txt('{output_dir}/edq_measures_{git}.txt'.format(output_dir=STIM_OUTPUT_DIR, git=getFullOutputFolderPath('/')[1:]), stim_all)
 
               
 sys.exit()
