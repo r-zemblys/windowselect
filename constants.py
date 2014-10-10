@@ -1,5 +1,4 @@
-__author__ = 'Sol'
-__version__ = 'RZ'
+__author__ = 'RZ'
 import numpy as np
 
 et_nan_values = dict()
@@ -56,6 +55,8 @@ stim_dtype = np.dtype([
     ('left_gaze_STD_y', np.float32),
     ('left_gaze_fix_x', np.float32),
     ('left_gaze_fix_y', np.float32),
+    ('left_gaze_range_x', np.float32),
+    ('left_gaze_range_y', np.float32),
     ('left_angle_ind', np.float32),
     ('left_angle_ACC', np.float32),
     ('left_angle_ACC_x', np.float32),
@@ -68,6 +69,8 @@ stim_dtype = np.dtype([
     ('left_angle_STD_y', np.float32),
     ('left_angle_fix_x', np.float32),
     ('left_angle_fix_y', np.float32),
+    ('left_angle_range_x', np.float32),
+    ('left_angle_range_y', np.float32),
     
 
     ('right_gaze_ind', np.float32),
@@ -85,6 +88,8 @@ stim_dtype = np.dtype([
     ('right_gaze_STD_y', np.float32),
     ('right_gaze_fix_x', np.float32),
     ('right_gaze_fix_y', np.float32),
+    ('right_gaze_range_x', np.float32),
+    ('right_gaze_range_y', np.float32),
     ('right_angle_ind', np.float32),
     ('right_angle_ACC', np.float32),
     ('right_angle_ACC_x', np.float32),
@@ -97,6 +102,8 @@ stim_dtype = np.dtype([
     ('right_angle_STD_y', np.float32),
     ('right_angle_fix_x', np.float32),
     ('right_angle_fix_y', np.float32),
+    ('right_angle_range_x', np.float32),
+    ('right_angle_range_y', np.float32),
     ])
     
 stim_pos_mappings=dict([
