@@ -37,7 +37,7 @@ GLOB_PATH_PATTERN = INPUT_FILE_ROOT+r"*/*.npy"
 
 STIM_OUTPUT_DIR = INPUT_FILE_ROOT
 
-SAVE_RAW_TXT = False
+SAVE_RAW_TXT = True
 SAVE_RAW_NPY = True
 
 SAVE_STIM_TXT = True
@@ -180,8 +180,8 @@ if __name__ == '__main__':
             for win_size in analysis_win_sizes:
                 for eye in ['left', 'right']:
                     for wsa in ['fiona', 'dixon1', 'dixon2', 'dixon3', 'jeff']: #Add all in order to be consistent across all files
-                        measure_to_add = '_'.join((eye, wsa, np.str(np.int32(win_size*1000))))
-                        DATA = add_field(DATA, [(measure_to_add, '|u1')])
+                        variable_to_add = '_'.join((eye, wsa, np.str(np.int32(win_size*1000))))
+                        DATA = add_field(DATA, [(variable_to_add, '|u1')])
                         
             for win_size_sample, win_size in zip(analysis_win_sizes_sample, analysis_win_sizes):
 
@@ -193,7 +193,7 @@ if __name__ == '__main__':
                     measures.update(rolling_measures(DATA, eye, 'gaze', win_size_sample))
                     measures.update(rolling_measures(DATA, eye, 'angle', win_size_sample))
                     
-                    for wsa in selection_algorithms:
+                    for wsa in selection_algorithms: 
                         ### Analysis level data matrix: one line per target 
                         #TODO: call initStim from edq_shared
                         stim_change_ind = np.where(np.hstack((1,np.diff(DATA['trial_id']))) == 1)
@@ -268,11 +268,13 @@ if __name__ == '__main__':
                                 IND = analysis_range[np.nanargmin(measures_range)]
                                 
                                 #Window selection in raw data
-                                export_range = (DATA['time'] >= DATA['time'][IND]) \
-                                             & (DATA['time'] <= DATA['time'][IND]+win_size)
-                                export_range=np.squeeze(np.argwhere(export_range==True))
-                                         
-                                DATA[measure_to_add][export_range]=1
+#                                export_range = (DATA['time'] >= DATA['time'][IND]) \
+#                                             & (DATA['time'] <= DATA['time'][IND]+win_size)
+#                                export_range=np.squeeze(np.argwhere(export_range==True))
+                                
+                                export_range = np.arange(IND, IND+win_size_sample)
+                                export_variable = '_'.join((eye, wsa, np.str(np.int32(win_size*1000))))
+                                DATA[export_variable][export_range]=1
                                 
                                 #save measures to stim
                                 stim['_'.join((eye, 'gaze', 'ind'))][stim_ind] = IND
