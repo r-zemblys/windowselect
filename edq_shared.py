@@ -267,6 +267,12 @@ def detect_rollingWin(data, **args):
                     
                     for key in measures.keys():
                         stim[key][stim_ind]=measures[key][IND]  
+                        
+                    #Raw window selection
+                    #Not a smartest approach, because directly modifies DATA
+                    export_range = np.arange(IND, IND+win_size_sample)
+                    export_variable = '_'.join((eye, wsa, np.str(np.int32(win_size*1000))))
+                    data[export_variable][export_range]=1
             
             stim_full.extend(stim.tolist())
                   
