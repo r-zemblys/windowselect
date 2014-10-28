@@ -45,7 +45,7 @@ SAVE_STIM_NPY = True
 
 window_skip=0.2
 analysis_win_sizes = [0.1, 0.175] #in seconds
-analysis_win_sizes = [0.1]
+#analysis_win_sizes = [0.1]
 
 selection_algorithms = ['fiona', 'dixon1', 'dixon2', 'dixon3', 'jeff']
 #selection_algorithms = [ 'fiona']
@@ -133,13 +133,6 @@ if __name__ == '__main__':
                 _r = range(0,len(DATA['time']), 2)
                 DATA=DATA[_r]
                         
-            ### Add fields to data file
-            for win_size in analysis_win_sizes:
-                for eye in ['left', 'right']:
-                    for wsa in ['fiona', 'dixon1', 'dixon2', 'dixon3', 'jeff']: #Add all in order to be consistent across all files
-                        variable_to_add = '_'.join((eye, wsa, np.str(np.int32(win_size*1000))))
-                        DATA = add_field(DATA, [(variable_to_add, '|u1')])
-                        
             for win_size in analysis_win_sizes:
 
                 print 'tracker: {et_model}, sub: {sub}, win: {win}'.format(et_model=et_model, sub=DATA['subject_id'][0], win=win_size)
@@ -150,10 +143,26 @@ if __name__ == '__main__':
                       'wsa': selection_algorithms}  
                 
                 stim=detect_rollingWin(DATA, **args)
+                
+                if SAVE_RAW_TXT | SAVE_RAW_NPY:                
+                    ### Export raw window selection
+                    for wsa in ['fiona', 'dixon1', 'dixon2', 'dixon3', 'jeff']: #Add all in order to be consistent across all files
+                        _stim = stim[(stim['wsa'] == wsa)
+                                    &(stim['win_size'] == win_size)
+                                ]    
+                        for eye in ['left', 'right']:
+                            variable_to_add = '_'.join((eye, wsa, np.str(np.int32(win_size*1000))))
+                            DATA = add_field(DATA, [(variable_to_add, '|u1')])
+                            for stim_ind, stim_row in enumerate(_stim):
+                                ind_s = stim_row['_'.join((eye, 'angle', 'ind'))]
+                                ind_e = stim_row['_'.join((eye, 'sample', 'count'))]
+                                export_range = np.int32(np.arange(ind_s, ind_s+ind_e))
+                                DATA[variable_to_add][export_range]=1
+                    ###
+           
                 stim_all.extend(stim.tolist())
     
             print 'Analysis time:', time.time()-t1
-            
 
             #Save output
             TRACKER_OUTPUT_DIR = '{root}/{tracker}'.format(root=OUTPUT_DIR, tracker=et_model)
