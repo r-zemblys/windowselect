@@ -286,19 +286,19 @@ def rolling_measures(data, eye, units, win_size):
     @author: Raimondas Zemblys
     @email: raimondas.zemblys@humlab.lu.se
     """    
-    #inter-sample distances
-    isd = np.diff(zip(data['_'.join((eye, units, 'x'))], 
-                      data['_'.join((eye, units, 'y'))]), axis=0)
-    isd = np.vstack((isd[:,0], isd[:,1], np.hypot(isd[:,0], isd[:,1]))).T
+    #inter-sample distances    
+    isd = np.diff([data['_'.join((eye, units, 'x'))], 
+                   data['_'.join((eye, units, 'y'))]], axis=1).T
     
-
     measures=dict()
     
     #RMS
-    measures['_'.join((eye, units, 'RMS', 'x'))] = np.sqrt(np.mean(rolling_window(isd[:,0], win_size-1)**2, 1))
-    measures['_'.join((eye, units, 'RMS', 'y'))] = np.sqrt(np.mean(rolling_window(isd[:,1], win_size-1)**2, 1))
-    measures['_'.join((eye, units, 'RMS'))] = np.sqrt(np.mean(rolling_window(isd[:,2], win_size-1)**2, 1))
-    
+    measures['_'.join((eye, units, 'RMS', 'x'))] = np.sqrt(np.mean(np.square(rolling_window(isd[:,0], win_size-1)), 1))
+    measures['_'.join((eye, units, 'RMS', 'y'))] = np.sqrt(np.mean(np.square(rolling_window(isd[:,1], win_size-1)), 1))    
+    measures['_'.join((eye, units, 'RMS'))] = np.hypot(measures['_'.join((eye, units, 'RMS', 'x'))],
+                                                       measures['_'.join((eye, units, 'RMS', 'y'))]   
+                                              )
+                                              
     rolling_data_x = rolling_window(data['_'.join((eye, units, 'x'))], win_size)
     rolling_data_y = rolling_window(data['_'.join((eye, units, 'y'))], win_size)
     
