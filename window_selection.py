@@ -29,8 +29,8 @@ INCLUDE_TRACKERS = (
 )
 
 
-INCLUDE_SUB = 'ALL'
-INCLUDE_SUB = [15]
+#INCLUDE_SUB = 'ALL'
+INCLUDE_SUB = [1]
 
 INPUT_FILE_ROOT = r"/media/Data/EDQ/data_npy/"
 GLOB_PATH_PATTERN = INPUT_FILE_ROOT+r"*/*.npy"
@@ -44,11 +44,12 @@ SAVE_STIM_TXT = True
 SAVE_STIM_NPY = True
 
 window_skip=0.2
-analysis_win_sizes = [0.1, 0.175] #in seconds
-#analysis_win_sizes = [0.1]
+#analysis_win_sizes = [0.1, 0.175] #in seconds
+analysis_win_sizes = [0.1]
+win_type = 'sample'
 
 selection_algorithms = ['fiona', 'dixon1', 'dixon2', 'dixon3', 'jeff']
-#selection_algorithms = [ 'fiona']
+selection_algorithms = ['fiona']
 
 import os, sys
 import glob
@@ -59,8 +60,6 @@ import time
 import numpy as np
 import matplotlib.pylab as plt
 plt.ion()
-
-from constants import (et_nan_values)
 
 from edq_shared import (getFullOutputFolderPath, nabs, 
                         save_as_txt, add_field,
@@ -112,8 +111,8 @@ stim_all = []
 
 if __name__ == '__main__':
     for file_path in DATA_FILES:
-        try:
-#        if 1:
+#        try:
+        if 1:
             t1 = time.time()
             DATA = np.load(file_path)
             et_model, _ = getInfoFromPath(file_path)
@@ -125,7 +124,7 @@ if __name__ == '__main__':
                     _f.write(file_path+'\n')
                 continue
     
-            DATA = filter_trackloss(DATA, et_model)
+            DATA, _ = filter_trackloss(DATA, et_model)
                     
             #Removes every second sample for LC Tech EyeFollower
             #TODO: come up with a better alternative
@@ -139,6 +138,7 @@ if __name__ == '__main__':
                 
                 args={
                       'win_size': win_size,
+                      'win_type': win_type,
                       'window_skip': window_skip,
                       'wsa': selection_algorithms}  
                 
@@ -146,6 +146,7 @@ if __name__ == '__main__':
                 
                 if SAVE_RAW_TXT | SAVE_RAW_NPY:                
                     ### Export raw window selection
+                    units_to_export = 'angle'
                     for wsa in ['fiona', 'dixon1', 'dixon2', 'dixon3', 'jeff']: #Add all in order to be consistent across all files
                         _stim = stim[(stim['wsa'] == wsa)
                                     &(stim['win_size'] == win_size)
@@ -154,8 +155,8 @@ if __name__ == '__main__':
                             variable_to_add = '_'.join((eye, wsa, np.str(np.int32(win_size*1000))))
                             DATA = add_field(DATA, [(variable_to_add, '|u1')])
                             for stim_ind, stim_row in enumerate(_stim):
-                                ind_s = stim_row['_'.join((eye, 'angle', 'ind'))]
-                                ind_e = stim_row['_'.join((eye, 'sample', 'count'))]
+                                ind_s = stim_row['_'.join((eye, units_to_export, 'ind'))]
+                                ind_e = stim_row['_'.join((eye, units_to_export, 'sample_count'))]
                                 export_range = np.int32(np.arange(ind_s, ind_s+ind_e))
                                 DATA[variable_to_add][export_range]=1
                     ###
@@ -181,10 +182,10 @@ if __name__ == '__main__':
                 save_as_txt(save_path+'.txt', DATA)
                 print 'RAW_TXT saving time: ', time.time()-t1
    
-        except:
-            with open(OUTPUT_DIR+'/errors.info', 'a') as _f:
-                _f.write(file_path+'\n')
-                print 'Something went wrong:)', DATA['subject_id'][0]
+#        except:
+#            with open(OUTPUT_DIR+'/errors.info', 'a') as _f:
+#                _f.write(file_path+'\n')
+#                print 'Something went wrong:)', DATA['subject_id'][0]
    
    
     stim_all = np.array(stim_all, dtype=stim.dtype) 
