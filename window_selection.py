@@ -14,25 +14,25 @@ thanks to a Swedish Institute scholarship.
 
 """
 INCLUDE_TRACKERS = (
-                    #'dpi',
-#                    'eyefollower', 
+                    'dpi',
+                    'eyefollower', 
                     'eyelink', 
-#                    'eyetribe', 
-#                    'hispeed1250', 
-#                    'hispeed240',
-#                    'red250', 
-#                    'red500', 
-#                    'redm', 
-#                    't60xl', 
-#                    'tx300', 
-#                    'x2'
+                    'eyetribe', 
+                    'hispeed1250', 
+                    'hispeed240',
+                    'red250', 
+                    'red500', 
+                    'redm', 
+                    't60xl', 
+                    'tx300', 
+                    'x2'
 )
 
 
-#INCLUDE_SUB = 'ALL'
-INCLUDE_SUB = [1]
+INCLUDE_SUB = 'ALL'
+#INCLUDE_SUB = [1]
 
-INPUT_FILE_ROOT = r"/media/Data/EDQ/data_npy/"
+INPUT_FILE_ROOT = r"/media/Data/EDQ/data_npy/rev_903464a_UNSYNCED/"
 GLOB_PATH_PATTERN = INPUT_FILE_ROOT+r"*/*.npy"
 
 OUTPUT_DIR = r"/media/Data/EDQ/data_win_select/"
@@ -44,12 +44,12 @@ SAVE_STIM_TXT = True
 SAVE_STIM_NPY = True
 
 window_skip=0.2
-#analysis_win_sizes = [0.1, 0.175] #in seconds
-analysis_win_sizes = [0.1]
+analysis_win_sizes = [0.1, 0.175] #in seconds
+#analysis_win_sizes = [0.1]
 win_type = 'sample'
 
 selection_algorithms = ['fiona', 'dixon1', 'dixon2', 'dixon3', 'jeff']
-selection_algorithms = ['fiona']
+#selection_algorithms = ['fiona']
 
 import os, sys
 import glob
@@ -64,7 +64,6 @@ plt.ion()
 from edq_shared import (getFullOutputFolderPath, nabs, 
                         save_as_txt, add_field,
                         detect_rollingWin,
-                        filter_trackloss,
 )
   
     
@@ -96,7 +95,7 @@ def getGeometry(data):
                     1/(np.degrees(2*np.arctan(data['screen_height']/(2*data['eye_distance'])))/data['display_height_pix'])))
 
 if not os.path.exists(OUTPUT_DIR):
-                os.mkdir(OUTPUT_DIR)
+    os.mkdir(OUTPUT_DIR)
                 
 OUTPUT_DIR = getFullOutputFolderPath(OUTPUT_DIR)
 if not os.path.exists(OUTPUT_DIR):
@@ -110,22 +109,15 @@ DATA_FILES = [nabs(fpath) for fpath in glob.glob(GLOB_PATH_PATTERN) if analyseit
 stim_all = []
 
 if __name__ == '__main__':
+    file_log = open(OUTPUT_DIR + '/conversion.log', 'a')
+    
     for file_path in DATA_FILES:
-#        try:
-        if 1:
+        try:
+#        if 1:
             t1 = time.time()
             DATA = np.load(file_path)
             et_model, _ = getInfoFromPath(file_path)
-                       
-            #Skips multissesion recordings
-            #TODO: plot data from all sessions, manually select right one (could be done in hdf2wide step?)
-            if (len(np.unique(DATA['session_id'])) > 1):
-                with open('multi_session.info', 'a') as _f:
-                    _f.write(file_path+'\n')
-                continue
-    
-            DATA, _ = filter_trackloss(DATA, et_model)
-                    
+
             #Removes every second sample for LC Tech EyeFollower
             #TODO: come up with a better alternative
             if et_model == 'eyefollower':
@@ -133,7 +125,6 @@ if __name__ == '__main__':
                 DATA=DATA[_r]
                         
             for win_size in analysis_win_sizes:
-
                 print 'tracker: {et_model}, sub: {sub}, win: {win}'.format(et_model=et_model, sub=DATA['subject_id'][0], win=win_size)
                 
                 args={
@@ -143,6 +134,7 @@ if __name__ == '__main__':
                       'wsa': selection_algorithms}  
                 
                 stim=detect_rollingWin(DATA, **args)
+                file_log.write('[STIM_STATS_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
                 
                 if SAVE_RAW_TXT | SAVE_RAW_NPY:                
                     ### Export raw window selection
@@ -177,23 +169,25 @@ if __name__ == '__main__':
                 t1 = time.time()
                 np.save(save_path, DATA)
                 print 'RAW_NPY saving time: ', time.time()-t1
+                file_log.write('[SAVE_RAW_NPY_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
             if SAVE_RAW_TXT:
                 t1 = time.time()
                 save_as_txt(save_path+'.txt', DATA)
                 print 'RAW_TXT saving time: ', time.time()-t1
+                file_log.write('[SAVE_RAW_TXT_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
    
-#        except:
-#            with open(OUTPUT_DIR+'/errors.info', 'a') as _f:
-#                _f.write(file_path+'\n')
-#                print 'Something went wrong:)', DATA['subject_id'][0]
+        except:
+            print "WIN_SELECT_ERROR...Check log"
+            file_log.write('[WIN_SELECT_ERROR]\tfile: {file_path}\n'.format(file_path=file_path ))
    
    
     stim_all = np.array(stim_all, dtype=stim.dtype) 
     if SAVE_STIM_NPY: 
        np.save('{output_dir}/edq_measures_{git}'.format(output_dir=OUTPUT_DIR, git=getFullOutputFolderPath('/')[1:]), stim_all)
+       file_log.write('[SAVE_STIM_NPY_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
     if SAVE_STIM_TXT:
        save_as_txt('{output_dir}/edq_measures_{git}.txt'.format(output_dir=OUTPUT_DIR, git=getFullOutputFolderPath('/')[1:]), stim_all)
-
-              
+       file_log.write('[SAVE_STIM_TXT_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
+    
+    file_log.close()          
 sys.exit()
-
