@@ -19,7 +19,7 @@ def get_git_local_changed():
     import subprocess
     local_repo_status = subprocess.check_output(['git', 'status'])
     return local_repo_status.find(
-        'nothing to commit, working directory clean') == -1 and \
+        'nothing to commit (working directory clean)') == -1 and \
            local_repo_status.find('branch is up-to-date') == -1
 
 def get_git_revision_hash(branch_name='HEAD'):
