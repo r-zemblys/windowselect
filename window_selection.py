@@ -30,14 +30,13 @@ INCLUDE_TRACKERS = (
 
 
 INCLUDE_SUB = 'ALL'
-#INCLUDE_SUB = [1]
 
-INPUT_FILE_ROOT = r"/media/Data/EDQ/data_npy/rev_903464a_UNSYNCED/"
+INPUT_FILE_ROOT = r"/media/Data/EDQ/data_npy/rev_840e729/"
 GLOB_PATH_PATTERN = INPUT_FILE_ROOT+r"*/*.npy"
 
 OUTPUT_DIR = r"/media/Data/EDQ/data_win_select/"
 
-SAVE_RAW_TXT = True
+SAVE_RAW_TXT = False
 SAVE_RAW_NPY = True
 
 SAVE_STIM_TXT = True
@@ -45,7 +44,7 @@ SAVE_STIM_NPY = True
 
 window_skip=0.2
 analysis_win_sizes = [0.1, 0.175] #in seconds
-#analysis_win_sizes = [0.1]
+#analysis_win_sizes = [0.175]
 win_type = 'sample'
 
 selection_algorithms = ['fiona', 'dixon1', 'dixon2', 'dixon3', 'jeff']
@@ -63,10 +62,9 @@ plt.ion()
 
 from edq_shared import (getFullOutputFolderPath, nabs, 
                         save_as_txt, add_field,
-                        detect_rollingWin,
+                        detect_rollingWin, 
 )
   
-    
 def analyseit(fpath, include_sub, include_trackers):
     """
 
@@ -109,21 +107,21 @@ DATA_FILES = [nabs(fpath) for fpath in glob.glob(GLOB_PATH_PATTERN) if analyseit
 stim_all = []
 
 if __name__ == '__main__':
-    file_log = open(OUTPUT_DIR + '/conversion.log', 'a')
     
     for file_path in DATA_FILES:
-        try:
+        file_log = open(OUTPUT_DIR + '/win_select.log', 'a')
+        try:        
 #        if 1:
             t1 = time.time()
             DATA = np.load(file_path)
-            et_model, _ = getInfoFromPath(file_path)
+            et_model, sub = getInfoFromPath(file_path)
 
             #Removes every second sample for LC Tech EyeFollower
             #TODO: come up with a better alternative
             if et_model == 'eyefollower':
                 _r = range(0,len(DATA['time']), 2)
                 DATA=DATA[_r]
-                        
+            
             for win_size in analysis_win_sizes:
                 print 'tracker: {et_model}, sub: {sub}, win: {win}'.format(et_model=et_model, sub=DATA['subject_id'][0], win=win_size)
                 
@@ -131,7 +129,9 @@ if __name__ == '__main__':
                       'win_size': win_size,
                       'win_type': win_type,
                       'window_skip': window_skip,
-                      'wsa': selection_algorithms}  
+                      'wsa': selection_algorithms,
+                      'target_count' : 49,
+                     }  
                 
                 stim=detect_rollingWin(DATA, **args)
                 file_log.write('[STIM_STATS_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
@@ -175,19 +175,26 @@ if __name__ == '__main__':
                 save_as_txt(save_path+'.txt', DATA)
                 print 'RAW_TXT saving time: ', time.time()-t1
                 file_log.write('[SAVE_RAW_TXT_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
-   
+            
         except:
             print "WIN_SELECT_ERROR...Check log"
             file_log.write('[WIN_SELECT_ERROR]\tfile: {file_path}\n'.format(file_path=file_path ))
-   
+        finally:
+            if file_log:
+                file_log.close()    
    
     stim_all = np.array(stim_all, dtype=stim.dtype) 
     if SAVE_STIM_NPY: 
-       np.save('{output_dir}/edq_measures_{git}'.format(output_dir=OUTPUT_DIR, git=getFullOutputFolderPath('/')[1:]), stim_all)
-       file_log.write('[SAVE_STIM_NPY_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
+        file_log = open(OUTPUT_DIR + '/win_select.log', 'a')
+        stim_file_path = '{output_dir}/edq_measures_{git}'.format(output_dir=OUTPUT_DIR, git=getFullOutputFolderPath('/')[1:])
+        np.save(stim_file_path, stim_all)
+        file_log.write('[SAVE_STIM_NPY_OK]\n'.format(file_path=stim_file_path ))
+        file_log.close()  
     if SAVE_STIM_TXT:
-       save_as_txt('{output_dir}/edq_measures_{git}.txt'.format(output_dir=OUTPUT_DIR, git=getFullOutputFolderPath('/')[1:]), stim_all)
-       file_log.write('[SAVE_STIM_TXT_OK]\tfile: {file_path}\n'.format(file_path=file_path ))
-    
-    file_log.close()          
+        file_log = open(OUTPUT_DIR + '/win_select.log', 'a')
+        stim_file_path = '{output_dir}/edq_measures_{git}.txt'.format(output_dir=OUTPUT_DIR, git=getFullOutputFolderPath('/')[1:])
+        save_as_txt(stim_file_path, stim_all)
+        file_log.write('[SAVE_STIM_TXT_OK]\tfile: {file_path}\n'.format(file_path=stim_file_path ))
+        file_log.close() 
+            
 sys.exit()
